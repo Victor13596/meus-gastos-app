@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Gastos</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome CDN for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- PWA Meta Tags for iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Meus Gastos">
+    <link rel="apple-touch-icon" href="https://placehold.co/180x180/4f46e5/ffffff?text=FG">
+    <link rel="apple-touch-startup-image" href="https://placehold.co/750x1334/4f46e5/ffffff?text=Meus+Gastos">
+    
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/manifest.json">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e2e8f0; /* Light gray background */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1.5rem; /* Increased padding */
+            box-sizing: border-box;
+            margin: 0;
+        }
+        nav {
+            display: flex;
+            justify-content: center;
+            background: linear-gradient(to right, #6366f1, #4f46e5); /* Indigo gradient */
+            padding: 1rem;
+            width: 100%;
+            max-width: 420px; /* Match container width */
+            border-radius: 1.75rem 1.75rem 0 0; /* Rounded top corners */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            position: sticky; /* Sticky nav */
+            top: 1.5rem; /* Align with body padding */
+            z-index: 20;
+        }
+        nav button {
+            background: #ffffff;
+            border: none;
+            padding: 0.75rem 1.25rem; /* Larger padding */
+            margin: 0 0.4rem;
+            border-radius: 0.75rem; /* More rounded buttons */
+            cursor: pointer;
+            font-weight: 600;
+            color: #4f46e5;
+            transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        nav button:hover {
+            background-color: #e0e7ff;
+            transform: translateY(-2px);
+        }
+        nav button.active {
+            background-color: #4f46e5;
+            color: #ffffff;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+            transform: translateY(-1px);
+        }
+        nav button:active {
+            transform: scale(0.98);
+        }
+
+        .container {
+            background-color: #ffffff;
+            border-radius: 1.75rem; /* Even more rounded corners */
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15); /* More prominent shadow */
+            width: 100%;
+            max-width: 420px; /* Consistent width */
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #f0f2f5; /* Subtle border */
+            margin-top: 1.5rem; /* Space below nav */
+        }
+
+        .aba {
+            display: none;
+            padding: 2rem; /* More generous padding */
+            flex-grow: 1;
+        }
+        .aba.active {
+            display: block;
+        }
+
+        h2 {
+            font-size: 1.75rem; /* Larger heading */
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem; /* Increased spacing */
+        }
+        label {
+            display: block;
+            font-weight: 700; /* Bolder labels */
+            color: #2d3748; /* Darker gray for labels */
+            margin-bottom: 0.6rem; /* Slightly more space */
+            font-size: 0.98rem;
+        }
+        input[type="date"],
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 0.85rem 1.1rem; /* Slightly more padding */
+            border: 1px solid #cbd5e0; /* Softer border */
+            border-radius: 0.9rem; /* Even more rounded inputs */
+            font-size: 1.05rem; /* Slightly larger font */
+            color: #374151;
+            background-color: #f8fafc; /* Very light gray background for inputs */
+            transition: border-color 0.2s, box-shadow 0.2s;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+        input:focus {
+            outline: none;
+            border-color: #4f46e5; /* Indigo focus ring */
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.25); /* More prominent shadow on focus */
+        }
+        .radio-group, .checkbox-group {
+            display: flex;
+            gap: 1.25rem; /* Increased gap */
+            margin-top: 0.6rem;
+        }
+        .radio-group label, .checkbox-group label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-weight: 500;
+            color: #4b5563;
+            font-size: 1rem;
+        }
+        .radio-group input[type="radio"], .checkbox-group input[type="checkbox"] {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 1.35rem; /* Slightly larger radio/checkbox */
+            height: 1.35rem;
+            border: 2px solid #9ca3af;
+            border-radius: 50%; /* Radio */
+            margin-right: 0.6rem;
+            display: grid;
+            place-content: center;
+            transition: border-color 0.2s, background-color 0.2s;
+            flex-shrink: 0; /* Prevent shrinking */
+        }
+        .checkbox-group input[type="checkbox"] {
+            border-radius: 0.35rem; /* Square for checkbox */
+        }
+        .radio-group input[type="radio"]::before {
+            content: "";
+            width: 0.85rem; /* Larger inner circle */
+            height: 0.85rem;
+            border-radius: 50%;
+            transform: scale(0);
+            transition: transform 0.2s ease-in-out;
+            background-color: #4f46e5;
+        }
+        .checkbox-group input[type="checkbox"]::before {
+            content: "✔"; /* Checkmark for checkbox */
+            font-size: 0.9rem;
+            color: #ffffff;
+            transform: scale(0);
+            transition: transform 0.2s ease-in-out;
+        }
+        .radio-group input[type="radio"]:checked {
+            border-color: #4f46e5;
+        }
+        .radio-group input[type="radio"]:checked::before {
+            transform: scale(1);
+        }
+        .checkbox-group input[type="checkbox"]:checked {
+            background-color: #4f46e5;
+            border-color: #4f46e5;
+        }
+        .checkbox-group input[type="checkbox"]:checked::before {
+            transform: scale(1);
+        }
+
+        /* Custom Selection Components (Category and Payment Method) */
+        .selection-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Responsive grid */
+            gap: 0.75rem; /* Smaller gap */
+            margin-top: 0.6rem;
+        }
+        .selection-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem;
+            border: 1px solid #cbd5e0;
+            border-radius: 0.75rem;
+            background-color: #f8fafc;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #4b5563;
+        }
+        .selection-item i {
+            font-size: 1.5rem; /* Larger icons */
+            margin-bottom: 0.4rem;
+            color: #64748b; /* Default icon color */
+        }
+        .selection-item.active {
+            background-color: #e0e7ff; /* Light indigo background when active */
+            border-color: #4f46e5; /* Indigo border when active */
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.15);
+            color: #4f46e5; /* Text color when active */
+        }
+        .selection-item.active i {
+            color: #4f46e5; /* Icon color when active */
+        }
+        .selection-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column; /* Stack buttons on mobile */
+            gap: 1rem;
+            margin-top: 2rem; /* More space before buttons */
+        }
+        .button-group button {
+            width: 100%; /* Full width buttons */
+            padding: 1rem 1.5rem;
+            border: none;
+            border-radius: 1rem; /* Very rounded buttons */
+            font-size: 1.1rem; /* Larger font for buttons */
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+        }
+        .button-group button:active {
+            transform: scale(0.98);
+        }
+        .button-group button.primary-btn {
+            background: linear-gradient(to right, #4f46e5, #6366f1); /* Gradient for primary button */
+            color: #ffffff;
+            box-shadow: 0 6px 15px rgba(79, 70, 229, 0.4);
+        }
+        .button-group button.primary-btn:hover {
+            background: linear-gradient(to right, #4338ca, #5a57d6); /* Darker gradient on hover */
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.5);
+        }
+        .button-group button.secondary-btn {
+            background-color: #e0e7ff; /* Light indigo */
+            color: #4f46e5;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .button-group button.secondary-btn:hover {
+            background-color: #c7d2fe; /* Even lighter indigo */
+        }
+
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: separate; /* Use separate for rounded corners */
+            border-spacing: 0;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+            overflow: hidden; /* For rounded corners */
+            border-radius: 1rem; /* Rounded table */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        th, td {
+            padding: 0.8rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0; /* Lighter border */
+        }
+        th {
+            background-color: #f0f2f5;
+            color: #475569;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        tbody tr:nth-child(even) {
+            background-color: #f8fafc; /* Zebra striping */
+        }
+        tbody tr:hover {
+            background-color: #eff6ff; /* Hover effect */
+        }
+        .btn-excluir {
+            background: #ef4444; /* Red */
+            color: white;
+            border: none;
+            padding: 0.4rem 0.75rem;
+            cursor: pointer;
+            border-radius: 0.5rem; /* Rounded delete button */
+            transition: background-color 0.2s, transform 0.1s;
+            font-size: 0.85rem;
+        }
+        .btn-excluir:hover {
+            background-color: #dc2626;
+        }
+        .btn-excluir:active {
+            transform: scale(0.95);
+        }
+
+        #total {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-top: 1.5rem;
+            text-align: center;
+            padding: 0.75rem;
+            background-color: #e0e7ff;
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Chart Styling */
+        .chart-canvas { /* Renamed to be generic for both charts */
+            background-color: #ffffff;
+            border-radius: 1rem;
+            padding: 1rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            width: 100%; /* Ensure canvas takes full width of its parent */
+            height: auto; /* Allow canvas to determine its height based on aspect ratio */
+            max-height: 300px; /* Optional: Set a max height if it gets too tall on very wide screens */
+        }
+
+        /* Message Box Styling */
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.75); /* Darker, semi-transparent */
+            color: #fff;
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+            text-align: center;
+        }
+        .message-box.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Chat Specific Styles */
+        #chat-container {
+            height: 400px; /* Fixed height for chat window */
+            border: 1px solid #cbd5e0;
+            border-radius: 1rem;
+            overflow: hidden;
+            background-color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        #chat-messages {
+            flex-grow: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .chat-message {
+            max-width: 80%;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            word-wrap: break-word;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .chat-message.user {
+            background-color: #e0e7ff; /* Light blue */
+            color: #4f46e5; /* Darker blue text */
+            align-self: flex-end;
+            margin-left: auto;
+            border-bottom-right-radius: 0.25rem; /* Pointy corner */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .chat-message.bot {
+            background-color: #ffffff; /* White for bot messages */
+            color: #374151; /* Dark gray text */
+            align-self: flex-start;
+            margin-right: auto;
+            border: 1px solid #e2e8f0;
+            border-bottom-left-radius: 0.25rem; /* Pointy corner */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        #chat-input-area {
+            display: flex;
+            padding: 1rem;
+            border-top: 1px solid #e2e8f0;
+            background-color: #ffffff;
+        }
+
+        #chat-input {
+            flex-grow: 1;
+            padding: 0.75rem 1rem;
+            border: 1px solid #cbd5e0;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            color: #374151;
+            background-color: #f8fafc;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+
+        #chat-input:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+
+        #send-chat-btn, #voice-input-btn {
+            background: linear-gradient(to right, #4f46e5, #6366f1);
+            color: #ffffff;
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.75rem;
+            margin-left: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #send-chat-btn:hover, #voice-input-btn:hover {
+            background: linear-gradient(to right, #4338ca, #5a57d6);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 15px rgba(79, 70, 229, 0.4);
+        }
+
+        #send-chat-btn:active, #voice-input-btn:active {
+            transform: scale(0.98);
+        }
+
+        #voice-input-btn.listening {
+            background: linear-gradient(to right, #ef4444, #dc2626); /* Red when listening */
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <button onclick="mostrarAba('inserir')" class="active" id="btn-inserir">Conversar</button>
+        <button onclick="mostrarAba('tabela')" id="btn-tabela">Tabela</button>
+        <button onclick="mostrarAba('grafico')" id="btn-grafico">Fluxo</button>
+        <button onclick="mostrarAba('grafico-categoria')" id="btn-grafico-categoria">Categorias</button>
+    </nav>
+
+    <div class="container">
+        <section id="inserir" class="aba active">
+            <h2>Conversar para Inserir Lançamento</h2>
+            <div id="chat-container">
+                <div id="chat-messages">
+                    <!-- Chat messages will be appended here -->
+                </div>
+                <div id="chat-input-area">
+                    <input type="text" id="chat-input" placeholder="Ex: despesa 50.50 alimentacao almoço dinheiro" class="flex-1 p-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <button id="voice-input-btn" title="Entrada por Voz">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    <button id="send-chat-btn">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section id="tabela" class="aba">
+            <h2>Tabela de Lançamentos</h2>
+            <div class="filter-group mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="filter-month" class="block font-bold text-gray-700 mb-2">Mês:</label>
+                    <select id="filter-month" class="w-full p-2 border border-gray-300 rounded-lg" onchange="aplicarFiltrosTabela()">
+                        <!-- Options populated by JS -->
+                    </select>
+                </div>
+                <div>
+                    <label for="filter-year" class="block font-bold text-gray-700 mb-2">Ano:</label>
+                    <select id="filter-year" class="w-full p-2 border border-gray-300 rounded-lg" onchange="aplicarFiltrosTabela()">
+                        <!-- Options populated by JS -->
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <label for="filter-category" class="block font-bold text-gray-700 mb-2">Categoria:</label>
+                    <select id="filter-category" class="w-full p-2 border border-gray-300 rounded-lg" onchange="aplicarFiltrosTabela()">
+                        <option value="Todos">Todas as Categorias</option>
+                        <option value="Alimentação">Alimentação</option>
+                        <option value="Moradia">Moradia</option>
+                        <option value="Transporte">Transporte</option>
+                        <option value="Salário">Salário</option>
+                        <option value="Serviço">Serviço</option>
+                        <option value="Lazer">Lazer</option>
+                        <option value="Saúde">Saúde</option>
+                        <option value="Educação">Educação</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+            </div>
+            <table id="tabela-gastos">
+                <thead>
+                    <tr>
+                        <th>Tipo</th>
+                        <th>Data</th>
+                        <th>Categoria</th>
+                        <th>Descrição</th>
+                        <th>Pagamento</th>
+                        <th>Valor</th>
+                        <th>Realizado?</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <h3 id="total">Saldo: R$ 0,00</h3>
+        </section>
+
+        <section id="grafico" class="aba">
+            <h2>Fluxo de Caixa Mensal</h2>
+            <canvas id="grafico-canvas" class="chart-canvas"></canvas>
+        </section>
+
+        <section id="grafico-categoria" class="aba">
+            <h2>Custos por Categoria</h2>
+            <div class="filter-group mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="category-chart-month" class="block font-bold text-gray-700 mb-2">Mês:</label>
+                    <select id="category-chart-month" class="w-full p-2 border border-gray-300 rounded-lg" onchange="atualizarGraficoCategoria()">
+                        <!-- Options populated by JS -->
+                    </select>
+                </div>
+                <div>
+                    <label for="category-chart-year" class="block font-bold text-gray-700 mb-2">Ano:</label>
+                    <select id="category-chart-year" class="w-full p-2 border border-gray-300 rounded-lg" onchange="atualizarGraficoCategoria()">
+                        <!-- Options populated by JS -->
+                    </select>
+                </div>
+            </div>
+            <canvas id="grafico-categoria-canvas" class="chart-canvas"></canvas>
+        </section>
+    </div>
+
+    <!-- Message Box -->
+    <div id="messageBox" class="message-box"></div>
+
+    <script>
+        let fluxo = [];
+        let meuGraficoFluxo; // Global variable for Cash Flow Chart.js instance
+        let meuGraficoCategoria; // Global variable for Category Chart.js instance
+
+        const monthNames = [
+            "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+            "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+        ];
+
+        const allCategories = [
+            "Alimentação", "Moradia", "Transporte", "Salário", "Serviço",
+            "Lazer", "Saúde", "Educação", "Outros"
+        ];
+
+        const allPaymentMethods = [
+            "Dinheiro", "Pix", "Cartão Crédito", "Cartão Débito", "Boleto", "Transferência"
+        ];
+
+        // Chat specific elements
+        const chatMessagesDiv = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
+        const sendChatBtn = document.getElementById('send-chat-btn');
+        const voiceInputBtn = document.getElementById('voice-input-btn');
+
+        // Speech Recognition API setup
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        let isListening = false;
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false; // Listen for a single utterance
+            recognition.lang = 'pt-BR'; // Set language to Brazilian Portuguese
+
+            recognition.onstart = () => {
+                isListening = true;
+                voiceInputBtn.classList.add('listening');
+                displayMessage('bot', 'Estou ouvindo...');
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                chatInput.value = transcript;
+                sendChatBtn.click(); // Automatically send the recognized text
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                displayMessage('bot', `Erro no reconhecimento de voz: ${event.error}.`);
+                isListening = false;
+                voiceInputBtn.classList.remove('listening');
+            };
+
+            recognition.onend = () => {
+                isListening = false;
+                voiceInputBtn.classList.remove('listening');
+                displayMessage('bot', 'Reconhecimento de voz finalizado.');
+            };
+
+            voiceInputBtn.addEventListener('click', () => {
+                if (isListening) {
+                    recognition.stop();
+                } else {
+                    try {
+                        recognition.start();
+                    } catch (e) {
+                        console.error('Error starting speech recognition:', e);
+                        displayMessage('bot', 'Não foi possível iniciar o reconhecimento de voz. Verifique as permissões do microfone.');
+                    }
+                }
+            });
+        } else {
+            // Hide voice input button if API is not supported
+            voiceInputBtn.style.display = 'none';
+            displayMessage('bot', 'Seu navegador não suporta reconhecimento de voz.');
+        }
+
+        // Function to show a temporary message
+        function showMessage(message, duration = 2000) {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.textContent = message;
+            messageBox.classList.add('show');
+            setTimeout(() => {
+                messageBox.classList.remove('show');
+            }, duration);
+        }
+
+        // Function to display messages in the chat UI
+        function displayMessage(sender, message) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('chat-message', sender);
+            messageElement.textContent = message;
+            chatMessagesDiv.appendChild(messageElement);
+            chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight; // Scroll to bottom
+        }
+
+        // Function to process user input from chat
+        function processChatInput(input) {
+            displayMessage('user', input); // Display user's message
+
+            const parts = input.toLowerCase().split(' ');
+            let tipo, valor, categoria, descricao, forma, data;
+            let botResponse = "Desculpe, não entendi. Por favor, use o formato: tipo valor categoria descrição forma [data YYYY-MM-DD].\nEx: despesa 50.50 alimentacao almoco dinheiro 2024-07-23";
+
+            if (parts.length >= 5) {
+                tipo = parts[0];
+                valor = parseFloat(parts[1]);
+                categoria = parts[2];
+                descricao = parts[3];
+                forma = parts[4];
+                data = parts[5] || new Date().toISOString().split('T')[0]; // Default to today
+
+                // Basic validation
+                const validTypes = ['despesa', 'receita'];
+                const validCategoriesLower = allCategories.map(cat => cat.toLowerCase());
+                const validPaymentMethodsLower = allPaymentMethods.map(pm => pm.toLowerCase());
+
+                if (!validTypes.includes(tipo)) {
+                    botResponse = "Tipo inválido. Use 'despesa' ou 'receita'.";
+                } else if (isNaN(valor) || valor <= 0) {
+                    botResponse = "Valor inválido. Por favor, insira um número positivo.";
+                } else if (!validCategoriesLower.includes(categoria)) {
+                    botResponse = `Categoria inválida. Opções: ${allCategories.join(', ').toLowerCase()}.`;
+                } else if (!validPaymentMethodsLower.includes(forma)) {
+                    botResponse = `Forma de pagamento inválida. Opções: ${allPaymentMethods.join(', ').toLowerCase()}.`;
+                } else {
+                    // All good, prepare data for adicionarGasto
+                    const itemData = {
+                        tipo: tipo.charAt(0).toUpperCase() + tipo.slice(1), // Capitalize first letter
+                        valor: valor,
+                        categoria: categoria.charAt(0).toUpperCase() + categoria.slice(1), // Capitalize first letter
+                        descricao: descricao.charAt(0).toUpperCase() + descricao.slice(1), // Capitalize first letter
+                        forma: forma.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '), // Capitalize each word for payment method
+                        data: data,
+                        realizado: false // Default for new entries
+                    };
+
+                    // Call the modified adicionarGasto
+                    adicionarGasto(itemData);
+                    botResponse = `Lançamento de ${itemData.tipo} de R$ ${itemData.valor.toFixed(2)} (${itemData.categoria}) adicionado com sucesso!`;
+                }
+            }
+
+            setTimeout(() => {
+                displayMessage('bot', botResponse);
+            }, 500); // Simulate bot thinking time
+        }
+
+        // Event listeners for chat input
+        sendChatBtn.addEventListener('click', () => {
+            const input = chatInput.value.trim();
+            if (input) {
+                processChatInput(input);
+                chatInput.value = ''; // Clear input
+            }
+        });
+
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendChatBtn.click(); // Trigger send button click
+            }
+        });
+
+        // Function to handle custom item selection (still used for form-like selection, but form is gone from this tab)
+        function selectItem(selectedElement, hiddenInputId) {
+            const container = selectedElement.closest('.selection-grid');
+            const hiddenInput = document.getElementById(hiddenInputId);
+
+            // Remove 'active' class from all items in the same group
+            container.querySelectorAll('.selection-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // Add 'active' class to the clicked item
+            selectedElement.classList.add('active');
+            // Update the hidden input's value
+            hiddenInput.value = selectedElement.dataset.value;
+        }
+
+        // Function to populate month and year select dropdowns
+        function populateMonthYearFilters() {
+            const currentYear = new Date().getFullYear();
+            const years = new Set();
+            
+            // Add current year and a few past years to the set
+            for (let i = 0; i < 5; i++) {
+                years.add(currentYear - i);
+            }
+            // Also add years from existing data
+            fluxo.forEach(item => years.add(new Date(item.data).getFullYear()));
+
+            const sortedYears = Array.from(years).sort((a, b) => b - a); // Descending order
+
+            const monthOptionsHTML = '<option value="Todos">Todos os Meses</option>' +
+                                     monthNames.map((name, index) => `<option value="${index + 1}">${name}</option>`).join('');
+
+            // Add "Todos os Anos" option
+            const yearOptionsHTML = '<option value="Todos">Todos os Anos</option>' + 
+                                    sortedYears.map(year => `<option value="${year}">${year}</option>`).join('');
+
+            // For Table Filters
+            const filterMonthSelect = document.getElementById('filter-month');
+            const filterYearSelect = document.getElementById('filter-year');
+            filterMonthSelect.innerHTML = monthOptionsHTML;
+            filterYearSelect.innerHTML = yearOptionsHTML;
+
+            // For Category Chart Filters
+            const categoryChartMonthSelect = document.getElementById('category-chart-month');
+            const categoryChartYearSelect = document.getElementById('category-chart-year');
+            categoryChartMonthSelect.innerHTML = monthOptionsHTML;
+            categoryChartYearSelect.innerHTML = yearOptionsHTML;
+
+            // Set default selected month/year for filters
+            const today = new Date();
+            filterMonthSelect.value = today.getMonth() + 1; // Current month
+            filterYearSelect.value = today.getFullYear(); // Current year
+            categoryChartMonthSelect.value = today.getMonth() + 1; // Current month
+            categoryChartYearSelect.value = today.getFullYear(); // Current year
+        }
+
+        window.onload = function () {
+            const dadosSalvos = localStorage.getItem('fluxo');
+            if (dadosSalvos) {
+                fluxo = JSON.parse(dadosSalvos);
+            }
+
+            populateMonthYearFilters(); // Populate filters on load
+            atualizarTudo();
+            initializeChat(); // Initialize chat when the page loads
+        };
+
+        function mostrarAba(id) {
+            document.querySelectorAll('.aba').forEach(aba => aba.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+
+            // Update active button styling
+            document.querySelectorAll('nav button').forEach(button => button.classList.remove('active'));
+            document.getElementById(`btn-${id}`).classList.add('active');
+
+            if (id === 'grafico') {
+                atualizarGraficoFluxo();
+            } else if (id === 'tabela') {
+                aplicarFiltrosTabela(); // Apply filters when switching to table tab
+            } else if (id === 'grafico-categoria') {
+                atualizarGraficoCategoria();
+            } else if (id === 'inserir') {
+                initializeChat(); // Re-initialize chat when switching back to it
+            }
+        }
+
+        // Modified adicionarGasto to accept itemData directly
+        function adicionarGasto(itemData) {
+            const { tipo, data, categoria, descricao, forma, valor } = itemData;
+
+            // For chat input, we assume non-parcelado for simplicity in this iteration
+            const parcelado = false;
+            const parcelas = 1;
+            const valorParcela = valor / parcelas;
+
+            for (let i = 0; i < parcelas; i++) {
+                const dataParcela = new Date(data);
+                dataParcela.setMonth(dataParcela.getMonth() + i);
+                const dataFormatada = dataParcela.toISOString().split('T')[0];
+
+                const item = {
+                    tipo,
+                    data: dataFormatada,
+                    categoria,
+                    descricao: descricao + (parcelado ? ` (${i + 1}/${parcelas})` : ''),
+                    forma,
+                    valor: parseFloat(valorParcela.toFixed(2)),
+                    realizado: false
+                };
+                fluxo.push(item);
+            }
+            salvarLocal();
+            populateMonthYearFilters(); // Re-populate filters in case new month/year added
+            atualizarTudo();
+            // showMessage is now handled by processChatInput for feedback
+        }
+
+        function atualizarTudo() {
+            aplicarFiltrosTabela();
+            atualizarGraficoFluxo(); // Always update cash flow chart
+            atualizarGraficoCategoria(); // Always update category chart
+        }
+
+        function aplicarFiltrosTabela() {
+            const selectedMonth = document.getElementById('filter-month').value;
+            const selectedYear = document.getElementById('filter-year').value;
+            const selectedCategory = document.getElementById('filter-category').value;
+
+            const filteredFluxo = fluxo.filter(item => {
+                const itemDate = new Date(item.data);
+                const itemMonth = itemDate.getMonth() + 1; // 1-12
+                const itemYear = itemDate.getFullYear();
+
+                // Filter by month and year
+                const isMatchingMonth = (selectedMonth === 'Todos' || itemMonth == selectedMonth);
+                const isMatchingYear = (selectedYear === 'Todos' || itemYear == selectedYear); // Handle 'Todos' for year
+
+                // Filter by category
+                const isMatchingCategory = (selectedCategory === 'Todos' || item.categoria === selectedCategory);
+
+                return isMatchingMonth && isMatchingYear && isMatchingCategory;
+            });
+
+            renderizarTabela(filteredFluxo);
+            atualizarSaldo(filteredFluxo);
+        }
+
+        function renderizarTabela(dataToRender) {
+            const tbody = document.querySelector('#tabela-gastos tbody');
+            tbody.innerHTML = '';
+            const fluxoOrdenado = [...dataToRender].sort((a, b) => new Date(a.data) - new Date(b.data));
+
+            fluxoOrdenado.forEach((item, index) => {
+                const linha = tbody.insertRow();
+                linha.insertCell().textContent = item.tipo;
+                linha.insertCell().textContent = item.data;
+                linha.insertCell().textContent = item.categoria;
+                linha.insertCell().textContent = item.descricao;
+                linha.insertCell().textContent = item.forma;
+                linha.insertCell().textContent = `R$ ${item.valor.toFixed(2)}`;
+
+                const cellCheck = linha.insertCell();
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = item.realizado;
+                checkbox.onchange = () => {
+                    const originalItem = fluxo.find(f =>
+                        f.tipo === item.tipo &&
+                        f.data === item.data &&
+                        f.categoria === item.categoria &&
+                        f.descricao === item.descricao &&
+                        f.forma === item.forma &&
+                        f.valor === item.valor &&
+                        f.realizado === !checkbox.checked
+                    );
+                    if (originalItem) {
+                        originalItem.realizado = checkbox.checked;
+                        salvarLocal();
+                        aplicarFiltrosTabela();
+                    }
+                };
+                cellCheck.appendChild(checkbox);
+
+                const cellBtn = linha.insertCell();
+                const btn = document.createElement('button');
+                btn.textContent = 'Excluir';
+                btn.className = 'btn-excluir';
+                btn.onclick = () => {
+                    const originalIndex = fluxo.findIndex(f =>
+                        f.tipo === item.tipo &&
+                        f.data === item.data &&
+                        f.categoria === item.categoria &&
+                        f.descricao === item.descricao &&
+                        f.forma === item.forma &&
+                        f.valor === item.valor &&
+                        f.realizado === item.realizado
+                    );
+                    if (originalIndex > -1) {
+                        fluxo.splice(originalIndex, 1);
+                        salvarLocal();
+                        aplicarFiltrosTabela();
+                        showMessage('Lançamento excluído!', 1500);
+                    }
+                };
+                cellBtn.appendChild(btn);
+            });
+        }
+
+        function atualizarSaldo(dataForSaldo = fluxo) {
+            const total = dataForSaldo.reduce((acc, item) => acc + (item.tipo === 'Despesa' ? -item.valor : item.valor), 0);
+            document.getElementById('total').innerText = `Saldo: R$ ${total.toFixed(2)}`;
+            const totalElement = document.getElementById('total');
+            if (total < 0) {
+                totalElement.style.color = '#ef4444'; /* Red for negative */
+            } else {
+                totalElement.style.color = '#22c55e'; /* Green for positive */
+            }
+        }
+
+        function atualizarGraficoFluxo() {
+            const agrupado = {};
+            fluxo.forEach(item => {
+                const date = new Date(item.data);
+                const monthYear = `${date.getMonth() + 1}/${date.getFullYear()}`;
+                agrupado[monthYear] = (agrupado[monthYear] || 0) + (item.tipo === 'Despesa' ? -item.valor : item.valor);
+            });
+
+            const datas = Object.keys(agrupado).sort((a, b) => {
+                const [monthA, yearA] = a.split('/').map(Number);
+                const [monthB, yearB] = b.split('/').map(Number);
+                if (yearA !== yearB) return yearA - yearB;
+                return monthA - monthB;
+            });
+            const valores = datas.map(d => agrupado[d]);
+
+            const ctx = document.getElementById('grafico-canvas').getContext('2d');
+            if (meuGraficoFluxo) {
+                meuGraficoFluxo.destroy();
+            }
+            meuGraficoFluxo = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: datas,
+                    datasets: [{
+                        label: 'Fluxo de Caixa Mensal',
+                        data: valores,
+                        borderColor: '#4f46e5', /* Indigo */
+                        backgroundColor: 'rgba(79, 70, 229, 0.2)', /* Light indigo fill */
+                        fill: true,
+                        tension: 0.3, /* Smooth line */
+                        pointBackgroundColor: '#4f46e5',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#374151',
+                                font: {
+                                    family: 'Inter',
+                                    size: 14
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleFont: { family: 'Inter', size: 14 },
+                            bodyFont: { family: 'Inter', size: 12 },
+                            padding: 10,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += `R$ ${context.parsed.y.toFixed(2)}`;
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#6b7280',
+                                font: { family: 'Inter' }
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: '#e2e8f0' /* Lighter grid lines */
+                            },
+                            ticks: {
+                                color: '#6b7280',
+                                font: { family: 'Inter' },
+                                callback: function(value) {
+                                    return `R$ ${value.toFixed(2)}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function atualizarGraficoCategoria() {
+            const selectedMonth = document.getElementById('category-chart-month').value;
+            const selectedYear = document.getElementById('category-chart-year').value;
+
+            const filteredExpenses = fluxo.filter(item => {
+                const itemDate = new Date(item.data);
+                const itemMonth = itemDate.getMonth() + 1;
+                const itemYear = itemDate.getFullYear();
+
+                const isMatchingMonth = (selectedMonth === 'Todos' || itemMonth == selectedMonth);
+                const isMatchingYear = (selectedYear === 'Todos' || itemYear == selectedYear);
+
+                return item.tipo === 'Despesa' && isMatchingMonth && isMatchingYear;
+            });
+
+            const agrupadoPorCategoria = {};
+            filteredExpenses.forEach(item => {
+                agrupadoPorCategoria[item.categoria] = (agrupadoPorCategoria[item.categoria] || 0) + item.valor;
+            });
+
+            const labels = Object.keys(agrupadoPorCategoria);
+            const data = Object.values(agrupadoPorCategoria);
+
+            const backgroundColors = [
+                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40',
+                '#E7E9ED', '#8D6E63', '#4CAF50', '#FFCDD2', '#B3E5FC', '#FFF9C4'
+            ];
+            const borderColors = backgroundColors.map(color => color.replace('0.2)', '1)'));
+
+            const ctx = document.getElementById('grafico-categoria-canvas').getContext('2d');
+            if (meuGraficoCategoria) {
+                meuGraficoCategoria.destroy();
+            }
+
+            meuGraficoCategoria = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: backgroundColors.slice(0, labels.length),
+                        borderColor: borderColors.slice(0, labels.length),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'right',
+                            labels: {
+                                color: '#374151',
+                                font: {
+                                    family: 'Inter',
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleFont: { family: 'Inter', size: 14 },
+                            bodyFont: { family: 'Inter', size: 12 },
+                            padding: 10,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += `R$ ${context.parsed.toFixed(2)}`;
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Toggles visibility of the installments container (not used in chat, but kept for future reference)
+        function toggleParceladoContainer() {
+            // This function is no longer directly linked to form elements in the 'inserir' tab
+            // but is kept for potential future use if a form-based input is re-introduced or modified.
+            // For now, parcelado is assumed false for chat inputs.
+        }
+
+        // Toggles disabled state of 'parcelas' input (not used in chat, but kept for future reference)
+        function toggleParcelas() {
+            // This function is no longer directly linked to form elements in the 'inserir' tab
+            // but is kept for potential future use if a form-based input is re-introduced or modified.
+        }
+
+        // Function to clear the form fields (now clears chat input and re-initializes chat)
+        function clearForm() {
+            chatInput.value = '';
+            chatMessagesDiv.innerHTML = '';
+            initializeChat();
+            showMessage('Chat limpo!', 1500);
+        }
+
+        // Initial welcome message for the chat interface
+        function initializeChat() {
+            chatMessagesDiv.innerHTML = ''; // Clear previous messages
+            displayMessage('bot', "Olá! Para adicionar um lançamento, digite no formato: tipo valor categoria descrição forma [data YYYY-MM-DD].\n\nExemplos:\n- despesa 50.50 alimentacao almoço dinheiro\n- receita 1200 salario meu-salario transferencia 2024-07-01\n\nAs categorias válidas são: " + allCategories.join(', ') + ".\nAs formas de pagamento válidas são: " + allPaymentMethods.join(', ') + ".");
+        }
+
+        function salvarLocal() {
+            localStorage.setItem('fluxo', JSON.stringify(fluxo));
+        }
+    </script>
+</body>
+</html>
